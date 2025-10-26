@@ -5,6 +5,7 @@ const http = require('http');
 
 const program = new Command();
 
+// Налаштування параметрів командного рядка
 program
   .requiredOption('-h, --host <host>', 'адреса сервера')
   .requiredOption('-p, --port <port>', 'порт сервера')
@@ -13,12 +14,14 @@ program
 
 const options = program.opts();
 
+// Ініціалізація сервера
 async function initializeServer() {
   try {
     // Створюємо директорію для кешу, якщо її немає
     await fs.mkdir(options.cache, { recursive: true });
     console.log(`Директорія кешу створена: ${options.cache}`);
 
+    // Створюємо HTTP сервер
     const server = http.createServer((req, res) => {
       res.writeHead(200, { 'Content-Type': 'text/plain' });
       res.end('Проксі-сервер працює!');
