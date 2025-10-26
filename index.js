@@ -118,5 +118,8 @@ async function initializeServer() {
     process.exit(1);
   }
 }
+initializeServer();
+
+
 
 
