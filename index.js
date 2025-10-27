@@ -2,6 +2,7 @@ const { Command } = require('commander');
 const fs = require('fs').promises;
 const path = require('path');
 const http = require('http');
+const superagent = require('superagent');
 
 const program = new Command();
 
@@ -48,20 +49,49 @@ async function handleRequest(req, res) {
   }
 }
 
-// GET - отримати картинку з кешу
+// GET - отримати картинку з кешу або з http.cat
 async function handleGetRequest(statusCode, res) {
   try {
+    // Спершу пробуємо отримати з кешу
     const imageData = await fs.readFile(getCacheFilePath(statusCode));
     res.writeHead(200, { 'Content-Type': 'image/jpeg' });
     res.end(imageData);
     console.log(`GET ${statusCode} - from cache`);
   } catch (error) {
     if (error.code === 'ENOENT') {
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('Not Found');
+      // Якщо файлу немає в кеші, робимо запит до http.cat
+      await fetchFromHttpCat(statusCode, res);
     } else {
       throw error;
     }
+  }
+}
+
+// Функція для отримання картинки з http.cat
+async function fetchFromHttpCat(statusCode, res) {
+  try {
+    console.log(`GET ${statusCode} - fetching from http.cat`);
+    
+    const response = await superagent
+      .get(`https://http.cat/${statusCode}`)
+      .responseType('buffer')
+      .timeout(10000); // 10 секунд таймаут
+
+    // Зберігаємо картинку в кеш
+    await fs.writeFile(getCacheFilePath(statusCode), response.body);
+    
+    // Відправляємо клієнту
+    res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+    res.end(response.body);
+    
+    console.log(`GET ${statusCode} - saved to cache and sent to client`);
+    
+  } catch (error) {
+    console.error(`Error fetching from http.cat for status ${statusCode}:`, error.message);
+    
+    // Якщо запит до http.cat невдалий
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Not Found');
   }
 }
 
@@ -118,8 +148,8 @@ async function initializeServer() {
     process.exit(1);
   }
 }
-initializeServer();
 
+initializeServer();
 
 
 
