@@ -3,3 +3,12 @@ package-lock.json
 .DS_Store
 *.log
 .cache/
+
+*.jpg
+*.jpeg  
+*.png
+test-cache/
+downloaded_*.jpg
+test*.jpg
+first_request.jpg
+second_request.jpg
